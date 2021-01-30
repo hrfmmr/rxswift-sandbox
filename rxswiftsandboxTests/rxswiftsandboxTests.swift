@@ -105,5 +105,47 @@ class rxswiftsandboxTests: XCTestCase {
         wait(for: [onNextExp], timeout: 5)
         XCTAssertEqual(onNextExpectedResult, onNextExpectedActual)
     }
+    
+    /// `materialize`
+    /// ストリームをEvent<T>へ変換
+    /// 正常系/異常系へのストリーム分岐ができる
+    /// 異常系(Error)をハンドリングするためのストリームをつくれる
+    /// catchErrorでflatMapされた値を受け取るでなく、元のエラーをsubscribe側でハンドリングしたいときに便利
+    /// materializeされたObservableからelements/errorsの分岐には以下Extensionをつかうと便利
+    /// https://github.com/RxSwiftCommunity/RxSwiftExt#errors-elements
+    /// https://github.com/RxSwiftCommunity/RxSwiftExt/blob/main/Source/RxSwift/materialized+elements.swift
+    func testMaterialize() {
+        let expOnNext = expectation(description: "onNext")
+        expOnNext.expectedFulfillmentCount = 1
+        let expOnError = expectation(description: "onError")
+        expOnError.expectedFulfillmentCount = 1
+        let observable = Observable<String>.create { observer -> Disposable in
+            observer.onNext("aaa")
+            observer.onError(TestError.test)
+            return Disposables.create()
+        }
+        let result = observable.materialize()
+        // 正常系(エラーが流れないストリーム)
+        let elements = result
+            .compactMap { $0.element }
+        // 異常系(エラーをイベントとして流すストリーム)
+        let errors = result
+            .compactMap { $0.error }
+        
+        elements
+            .subscribe(onNext: { str in
+                print("onNext: \(str)")
+                expOnNext.fulfill()
+            })
+            .disposed(by: disposeBag)
+        
+        errors
+            .subscribe(onNext: { error in
+                print("onError: \(error)")
+                expOnError.fulfill()
+            })
+            .disposed(by: disposeBag)
+        wait(for: [expOnNext, expOnError], timeout: 5)
+    }
 }
 
