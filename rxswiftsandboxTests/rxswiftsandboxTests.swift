@@ -67,4 +67,43 @@ class rxswiftsandboxTests: XCTestCase {
             .disposed(by: disposeBag)
         wait(for: [onNextExp], timeout: 5)
     }
+    
+    /// `catchError` operator
+    /// エラー検知時に、任意のデータに置き換える(Reactive ExtensionsでいうところのflatMapError)
+    func testCatchError() throws {
+        let onNextExp = expectation(description: "onNext invocations")
+        onNextExp.expectedFulfillmentCount = 2
+        let onNextExpectedResult = ["aaa", "zzz"]
+        var onNextExpectedActual = [String]()
+        let errObservable = Observable<String>.create { observer -> Disposable in
+            observer.onNext("aaa")
+            observer.onError(TestError.test)
+            observer.onCompleted()
+            return Disposables.create()
+        }
+        errObservable
+            .catchError({ error -> Observable<String> in
+                switch error {
+                case is TestError:
+                    return .just("zzz")
+                default:
+                    return .empty()
+                }
+            })
+            .subscribe { str in
+                print("onNext: \(str)")
+                onNextExpectedActual.append(str)
+                onNextExp.fulfill()
+            } onError: { error in
+                print("onError: \(error)")
+            } onCompleted: {
+                print("onCompleted")
+            } onDisposed: {
+                print("onDisposed")
+            }
+            .disposed(by: disposeBag)
+        wait(for: [onNextExp], timeout: 5)
+        XCTAssertEqual(onNextExpectedResult, onNextExpectedActual)
+    }
 }
+
