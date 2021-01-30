@@ -6,3 +6,7 @@ use_frameworks!
 target 'rxswiftsandbox' do
     pod 'RxSwift', '~> 5.0'
 end
+
+target 'rxswiftsandboxTests' do
+    pod 'RxSwift', '~> 5.0'
+end

@@ -6,9 +6,15 @@
 //
 
 import XCTest
+import RxSwift
 @testable import rxswiftsandbox
 
+enum TestError: Error {
+    case test
+}
+
 class rxswiftsandboxTests: XCTestCase {
+    private let disposeBag = DisposeBag()
 
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.
@@ -30,4 +36,35 @@ class rxswiftsandboxTests: XCTestCase {
         }
     }
 
+    /// `retry` operator
+    /// retryはエラー発生時にobserverに即座に通知せず、
+    /// 自動でストリームのre-subscribeを行う
+    func testErrorRetry() throws {
+        let onNextExp = expectation(description: "onNext invocations")
+        onNextExp.expectedFulfillmentCount = 3
+        let errObservable = Observable<String>.create { observer -> Disposable in
+            // エラー発生しても自動subscribeがretry count分行われるので、
+            // このonNextがretry試行回数分流れる
+            observer.onNext("aaa")
+            observer.onError(TestError.test)
+            print("Error encountered")
+            observer.onNext("bbb")
+            observer.onCompleted()
+            return Disposables.create()
+        }
+        errObservable
+            .retry(3)
+            .subscribe { str in
+                print("onNext: \(str)")
+                onNextExp.fulfill()
+            } onError: { error in
+                print("onError: \(error)")
+            } onCompleted: {
+                print("onCompleted")
+            } onDisposed: {
+                print("onDisposed")
+            }
+            .disposed(by: disposeBag)
+        wait(for: [onNextExp], timeout: 5)
+    }
 }
