@@ -1,0 +1,29 @@
+name: rxswiftsandbox
+
+targets:
+  rxswiftsandbox:
+    type: application
+    platform: iOS
+    sources:
+      - rxswiftsandbox
+  rxswiftsandboxTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - rxswiftsandboxTests
+    dependencies:
+      - target: rxswiftsandbox
+
+options:
+  bundleIdPrefix: com.hrfmmr
+  deploymentTarget:
+    iOS: 13.0
+  postGenCommand: pod install
+
+settings:
+  base:
+    MARKETING_VERSION: 0.0.0
+    CURRENT_PROJECT_VERSION: 1
+  config:
+    debug:
+      DEBUG_INFORMATION_FORMAT: "dwarf-with-dsym"
