@@ -1,6 +1,9 @@
 XCODE_WORKSPACE := rxswiftsandbox.xcworkspace
 BUNDLE_PATH ?= vendor/bundle
 
+.PHONY: default
+default: bootstrap open
+
 .PHONY: bootstrap
 bootstrap:
 	mint bootstrap
